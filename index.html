@@ -944,7 +944,7 @@ function buildEmployeeRow(weekIdx, empIdx, emp, calWeek, tbody) {
     e.preventDefault();
     tr.classList.remove('drag-over');
     if (!dragSrc || dragSrc.weekIdx!==weekIdx || dragSrc.empIdx===empIdx) return;
-    const d = loadData();
+    const d = loadLocal() || defaultMonthData(buildCalendar(curYear,curMonth).length);
     const emps = d.weeks[weekIdx].employees;
     const [moved] = emps.splice(dragSrc.empIdx, 1);
     const targetIdx = dragSrc.empIdx < empIdx ? empIdx-1 : empIdx;
@@ -964,7 +964,8 @@ function buildEmployeeRow(weekIdx, empIdx, emp, calWeek, tbody) {
   inp.type='text'; inp.className='name-inp';
   inp.placeholder=`Empleado/a ${empIdx+1}`; inp.value=emp.name||'';
   inp.addEventListener('change', e => {
-    const d=loadData();
+    const d = loadLocal() || defaultMonthData(buildCalendar(curYear,curMonth).length);
+    if (!d.weeks[weekIdx] || !d.weeks[weekIdx].employees[empIdx]) return;
     d.weeks[weekIdx].employees[empIdx].name=e.target.value.trim();
     saveData(d); renderSummary(d, buildCalendar(curYear,curMonth));
   });
@@ -1068,7 +1069,8 @@ function buildEmployeeRow(weekIdx, empIdx, emp, calWeek, tbody) {
   const btnDel = document.createElement('button');
   btnDel.className='btn-del'; btnDel.title='Eliminar fila'; btnDel.textContent='✕';
   btnDel.addEventListener('click', () => {
-    const d=loadData(); const emps=d.weeks[weekIdx].employees;
+    const d = loadLocal() || defaultMonthData(buildCalendar(curYear,curMonth).length);
+    const emps=d.weeks[weekIdx].employees;
     if (emps.length<=1) emps[empIdx]=newEmployee(); else emps.splice(empIdx,1);
     saveData(d); render();
   });
@@ -1112,7 +1114,11 @@ function buildTimeInput(value, disabled, title) {
  * @param {number} minutesWorked calculated duration in minutes
  */
 function saveDay(weekIdx, empIdx, iso, shift, timeStart, timeEnd, minutesWorked) {
-  const d = loadData();
+  // Usamos loadLocal() (sincrónico) porque saveDay se llama desde eventos del DOM
+  // que no pueden ser async fácilmente. Los datos locales siempre están disponibles.
+  const d = loadLocal() || defaultMonthData(buildCalendar(curYear, curMonth).length);
+  if (!d.weeks[weekIdx]) return;
+  if (!d.weeks[weekIdx].employees[empIdx]) return;
   if (!d.weeks[weekIdx].employees[empIdx].days)
     d.weeks[weekIdx].employees[empIdx].days = {};
 
@@ -1121,7 +1127,6 @@ function saveDay(weekIdx, empIdx, iso, shift, timeStart, timeEnd, minutesWorked)
     timeStart,
     timeEnd,
     minutesWorked,
-    // Store decimal too (convenient for external exports)
     hoursDecimal: minutesToDecimal(minutesWorked),
   };
   saveData(d);
