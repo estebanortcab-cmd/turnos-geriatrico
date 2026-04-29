@@ -866,11 +866,13 @@ function buildWeekSection(weekIdx, calWeek, weekData) {
   section.appendChild(hdr);
 
   hdr.querySelector('.btn-add').addEventListener('click', () => {
-    const d=loadData(); d.weeks[weekIdx].employees.push(newEmployee()); saveData(d); render();
+    const d = loadLocal() || defaultMonthData(buildCalendar(curYear,curMonth).length);
+    d.weeks[weekIdx].employees.push(newEmployee()); saveData(d); render();
   });
   hdr.querySelector('.btn-week-reset').addEventListener('click', () => {
     if (!confirm(`¿Limpiar todos los turnos de la Semana ${weekIdx+1}?`)) return;
-    const d=loadData(); d.weeks[weekIdx].employees.forEach(e=>{e.days={};}); saveData(d); render();
+    const d = loadLocal() || defaultMonthData(buildCalendar(curYear,curMonth).length);
+    d.weeks[weekIdx].employees.forEach(e=>{e.days={};}); saveData(d); render();
   });
 
   const scrollDiv = document.createElement('div');
