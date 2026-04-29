@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Turnos · Residencia</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS
+   Light-mode defaults; html.dark overrides below.
+═══════════════════════════════════════════════════ */
+:root {
+  --bg:        #f1f4f7;
+  --bg2:       #e4e8ee;
+  --surface:   #ffffff;
+  --surface2:  #f7f9fb;
+  --thead-bg:  #edf0f4;
+  --border:    #dde2ea;
+  --border2:   #c8d0db;
+  --text:      #18212e;
+  --text2:     #5a6778;
+  --text3:     #9aa5b4;
+  --accent:    #0d7a6b;
+  --accent2:   #0a6358;
+  --accent-lt: #d4f0eb;
+
+  --m-bg:#fff8e6; --m-bd:#f0a500; --m-tx:#7a4f00;
+  --a-bg:#e8f5e9; --a-bd:#22a44f; --a-tx:#0f4a22;
+  --n-bg:#ede9fe; --n-bd:#7147e8; --n-tx:#2e1065;
+  --i-bg:#e0f2fe; --i-bd:#0284c7; --i-tx:#0c4a6e;
+  --r-bg:#fef2f2; --r-bd:#f87171; --r-tx:#991b1b;
+  --f-bg:#f1f4f7; --f-bd:#c8d0db; --f-tx:#7a8899;
+
+  --today:    #dbeafe;
+  --today-bd: #2563eb;
+
+  --drag-over-bg:      rgba(13,122,107,.10);
+  --drag-ghost-opacity:.45;
+
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 1px 3px rgba(0,0,0,.07), 0 4px 20px rgba(0,0,0,.06);
+  --transition:background-color .25s ease,color .25s ease,
+               border-color .25s ease,box-shadow .25s ease;
+}
+
+/* ── DARK MODE ─────────────────────────────────── */
+html.dark {
+  --bg:#0f1117; --bg2:#181c24; --surface:#1e2330; --surface2:#252b3a;
+  --thead-bg:#1a2030; --border:#2e3548; --border2:#3a4258;
+  --text:#e8ecf3; --text2:#8b96aa; --text3:#5a6375;
+  --accent:#14b89e; --accent2:#11997f; --accent-lt:#0d3530;
+
+  --m-bg:#2e2000; --m-bd:#c07f00; --m-tx:#ffd060;
+  --a-bg:#0c2e14; --a-bd:#1a8a40; --a-tx:#6ee08a;
+  --n-bg:#1a1040; --n-bd:#7c5ce8; --n-tx:#c4b4ff;
+  --i-bg:#0a2035; --i-bd:#1a7fc4; --i-tx:#7ecfff;
+  --r-bg:#2e0c0c; --r-bd:#c44040; --r-tx:#ffaaaa;
+  --f-bg:#181c24; --f-bd:#3a4258; --f-tx:#6a7585;
+
+  --today:#0d2244; --today-bd:#4a8cff;
+  --drag-over-bg:rgba(20,184,158,.12);
+  --shadow:0 1px 4px rgba(0,0,0,.4),0 4px 20px rgba(0,0,0,.3);
+}
+
+/* ── BASE ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;scroll-behavior:smooth;}
+body{
+  font-family:'Sora',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;padding-bottom:80px;
+  transition:var(--transition);
+}
+
+/* ── HEADER ────────────────────────────────────── */
+header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);transition:var(--transition);
+}
+.header-inner{
+  max-width:1400px;margin:0 auto;padding:0 20px;height:64px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-icon{
+  width:36px;height:36px;background:var(--accent);
+  border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:18px;transition:background .25s;
+}
+.logo h1{font-size:.95rem;font-weight:700;letter-spacing:-.3px;line-height:1.2;}
+.logo p{font-size:.72rem;color:var(--text2);font-weight:400;}
+.spacer{flex:1;}
+
+.month-nav{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:4px;transition:var(--transition);
+}
+.month-nav button{
+  background:none;border:none;width:32px;height:32px;
+  border-radius:7px;cursor:pointer;font-size:1rem;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;
+}
+.month-nav button:hover{background:var(--surface);color:var(--accent);}
+#month-label{
+  font-size:.9rem;font-weight:600;min-width:168px;
+  text-align:center;letter-spacing:-.2px;color:var(--text);
+}
+
+#btn-dark{
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text2);border-radius:var(--radius-sm);
+  padding:7px 13px;font-size:.78rem;font-weight:600;
+  cursor:pointer;font-family:inherit;white-space:nowrap;
+  transition:background .2s,color .2s,border-color .2s;
+}
+#btn-dark:hover{background:var(--surface);color:var(--accent);border-color:var(--accent);}
+
+.btn-danger{
+  background:var(--r-bg);border:1px solid var(--r-bd);
+  color:var(--r-tx);border-radius:var(--radius-sm);
+  padding:7px 14px;font-size:.78rem;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:opacity .15s;
+}
+.btn-danger:hover{opacity:.75;}
+
+/* ── MAIN ──────────────────────────────────────── */
+main{max-width:1400px;margin:0 auto;padding:24px 20px;}
+
+/* ── SUMMARY CARD ──────────────────────────────── */
+.summary-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  margin-bottom:28px;overflow:hidden;transition:var(--transition);
+}
+.summary-card-header{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.summary-card-header h2{font-size:.9rem;font-weight:700;}
+.pill{
+  background:var(--accent-lt);color:var(--accent2);
+  font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:20px;
+  transition:var(--transition);
+}
+#summary-wrap{overflow-x:auto;}
+table.summary-tbl{width:100%;border-collapse:collapse;font-size:.8rem;}
+table.summary-tbl th{
+  padding:8px 12px;text-align:left;font-weight:600;
+  color:var(--text2);border-bottom:1px solid var(--border);
+  background:var(--surface2);white-space:nowrap;
+}
+table.summary-tbl td{
+  padding:9px 12px;border-bottom:1px solid var(--border);
+  vertical-align:middle;color:var(--text);
+}
+table.summary-tbl tr:last-child td{border-bottom:none;}
+table.summary-tbl tbody tr:hover{background:var(--surface2);}
+
+/* Chips */
+.chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:6px;padding:2px 8px;
+  font-size:.74rem;font-weight:600;
+  font-family:'JetBrains Mono',monospace;min-width:28px;
+}
+.chip-m{background:var(--m-bg);color:var(--m-tx);}
+.chip-a{background:var(--a-bg);color:var(--a-tx);}
+.chip-n{background:var(--n-bg);color:var(--n-tx);}
+.chip-i{background:var(--i-bg);color:var(--i-tx);}
+.chip-r{background:var(--r-bg);color:var(--r-tx);}
+.chip-t{background:var(--accent-lt);color:var(--accent2);}
+.chip-h{background:var(--n-bg);color:var(--n-tx);}  /* hours = purple-ish */
+.chip-0{background:var(--f-bg);color:var(--text3);}
+
+/* ── WEEK SECTION ──────────────────────────────── */
+.week-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  margin-bottom:20px;overflow:hidden;
+  animation:fadeUp .3s ease both;transition:var(--transition);
+}
+.week-section:nth-child(1){animation-delay:.00s;}
+.week-section:nth-child(2){animation-delay:.06s;}
+.week-section:nth-child(3){animation-delay:.12s;}
+.week-section:nth-child(4){animation-delay:.18s;}
+.week-section:nth-child(5){animation-delay:.22s;}
+.week-section:nth-child(6){animation-delay:.26s;}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+.week-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  background:var(--surface2);flex-wrap:wrap;gap:8px;
+  transition:var(--transition);
+}
+.week-title{display:flex;align-items:baseline;gap:10px;}
+.week-title h3{font-size:.88rem;font-weight:700;color:var(--text);}
+.week-range{
+  font-size:.71rem;color:var(--text2);
+  font-family:'JetBrains Mono',monospace;
+  background:var(--bg2);border:1px solid var(--border);
+  padding:2px 8px;border-radius:20px;
+}
+.week-actions{display:flex;gap:8px;}
+
+.btn-add{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:var(--radius-sm);padding:6px 14px;
+  font-size:.78rem;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:opacity .15s;
+}
+.btn-add:hover{opacity:.82;}
+
+.btn-week-reset{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text2);border-radius:var(--radius-sm);
+  padding:6px 12px;font-size:.78rem;font-weight:500;
+  cursor:pointer;font-family:inherit;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.btn-week-reset:hover{background:var(--r-bg);border-color:var(--r-bd);color:var(--r-tx);}
+
+/* ── SHIFT TABLE ───────────────────────────────── */
+.table-scroll{overflow-x:auto;}
+table.shift-tbl{
+  width:100%;border-collapse:collapse;
+  /* wider to accommodate time inputs */
+  min-width:1000px;
+}
+
+/* Day header row — softer background */
+table.shift-tbl thead tr{background:var(--thead-bg);}
+table.shift-tbl thead th{
+  padding:9px 4px 8px;text-align:center;
+  border-bottom:2px solid var(--border2);
+  white-space:nowrap;background:var(--thead-bg);
+  transition:var(--transition);
+}
+table.shift-tbl thead th:first-child{
+  text-align:left;padding-left:36px;
+  width:160px;min-width:140px;
+}
+table.shift-tbl thead th:last-child{width:34px;}
+
+.th-day-name{
+  display:block;font-size:.65rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--text2);
+}
+.th-day-num{
+  display:block;font-size:.9rem;font-weight:700;
+  color:var(--text);font-family:'JetBrains Mono',monospace;line-height:1.3;
+}
+
+/* Today column */
+th.col-today{background:var(--today) !important;}
+th.col-today .th-day-name{color:var(--today-bd);}
+th.col-today .th-day-num{color:var(--today-bd);}
+td.col-today{background:var(--today) !important;}
+
+/* Disabled (out-of-month) */
+th.col-disabled{opacity:.38;}
+td.col-disabled{background:var(--bg2) !important;pointer-events:none;}
+
+/* Body rows */
+table.shift-tbl tbody td{
+  padding:4px 3px;border-bottom:1px solid var(--border);
+  vertical-align:top;text-align:center;transition:background .12s;
+}
+table.shift-tbl tbody td:first-child{padding:4px 4px 4px 6px;text-align:left;vertical-align:middle;}
+table.shift-tbl tbody td:last-child{padding:4px 5px;vertical-align:middle;}
+table.shift-tbl tbody tr:last-child td{border-bottom:none;}
+table.shift-tbl tbody tr:hover td{background:var(--surface2);}
+table.shift-tbl tbody tr:hover td.col-today{background:color-mix(in srgb,var(--today) 80%,var(--surface2)) !important;}
+table.shift-tbl tbody tr:hover td.col-disabled{background:var(--bg2) !important;}
+
+/* ── DRAG & DROP ───────────────────────────────── */
+.drag-handle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:28px;margin-right:4px;
+  color:var(--text3);cursor:grab;flex-shrink:0;
+  font-size:1rem;border-radius:4px;
+  transition:color .15s,background .15s;
+  vertical-align:middle;user-select:none;
+}
+.drag-handle:hover{color:var(--text2);background:var(--bg2);}
+.drag-handle:active{cursor:grabbing;}
+tr.dragging{opacity:var(--drag-ghost-opacity);background:var(--drag-over-bg) !important;}
+tr.drag-over td{background:var(--drag-over-bg) !important;border-top:2px solid var(--accent) !important;}
+
+/* ── NAME INPUT ───────────────────────────────── */
+.name-inp{
+  width:100%;border:1.5px solid transparent;
+  border-radius:var(--radius-sm);padding:5px 6px;
+  font-size:.81rem;font-family:inherit;
+  background:transparent;color:var(--text);
+  transition:border-color .15s,background .15s;
+}
+.name-inp:hover{border-color:var(--border2);}
+.name-inp:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+.name-inp::placeholder{color:var(--text3);font-weight:300;}
+
+/* ── CELL WRAP ─────────────────────────────────
+   Stack: [shift select] → [time row] → [duration badge]
+   All stacked vertically inside each day column.
+─────────────────────────────────────────────── */
+.cell-wrap{display:flex;flex-direction:column;gap:3px;padding:2px 1px;}
+
+/* Shift select */
+.shift-sel{
+  width:100%;border:1.5px solid var(--f-bd);
+  border-radius:6px;padding:3px 2px;
+  font-size:.67rem;font-family:inherit;font-weight:600;
+  cursor:pointer;background:var(--f-bg);color:var(--f-tx);
+  text-align:center;appearance:none;
+  transition:border-color .15s,background .15s,color .15s;line-height:1.3;
+}
+.shift-sel:focus{outline:none;}
+.shift-sel.s-morning  {background:var(--m-bg);border-color:var(--m-bd);color:var(--m-tx);}
+.shift-sel.s-afternoon{background:var(--a-bg);border-color:var(--a-bd);color:var(--a-tx);}
+.shift-sel.s-night    {background:var(--n-bg);border-color:var(--n-bd);color:var(--n-tx);}
+.shift-sel.s-ingreso  {background:var(--i-bg);border-color:var(--i-bd);color:var(--i-tx);}
+.shift-sel.s-renuncia {background:var(--r-bg);border-color:var(--r-bd);color:var(--r-tx);}
+
+/* Time input row — Ingreso + Salida side by side */
+.time-row{
+  display:flex;gap:2px;align-items:center;
+}
+
+/* ── TIME INPUTS ───────────────────────────────
+   HH:MM inputs: compact, touch-friendly, themed.
+   We use type="time" so mobile gets a native picker.
+─────────────────────────────────────────────── */
+.time-inp{
+  flex:1;min-width:0;
+  border:1.5px solid var(--border2);
+  border-radius:5px;padding:2px 3px;
+  font-size:.65rem;font-family:'JetBrains Mono',monospace;font-weight:500;
+  text-align:center;background:var(--surface2);color:var(--text);
+  transition:border-color .15s,background .15s,color .15s;
+  /* Remove default time-input chrome on some browsers */
+  -webkit-appearance:none;appearance:none;
+}
+.time-inp:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+.time-inp:disabled{
+  background:var(--bg2);color:var(--text3);
+  border-color:transparent;cursor:not-allowed;opacity:.6;
+}
+/* Separator between start and end */
+.time-sep{
+  font-size:.6rem;color:var(--text3);flex-shrink:0;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* Duration badge — calculated result shown below the inputs */
+.duration-badge{
+  font-size:.62rem;font-family:'JetBrains Mono',monospace;font-weight:600;
+  color:var(--accent2);background:var(--accent-lt);
+  border-radius:5px;padding:1px 5px;text-align:center;
+  transition:var(--transition);min-height:14px;
+  letter-spacing:.2px;
+}
+.duration-badge:empty{background:transparent;}
+/* Overnight indicator: soft purple tint */
+.duration-badge.overnight{
+  color:var(--n-tx);background:var(--n-bg);
+}
+
+/* ── DELETE BUTTON ────────────────────────────── */
+.btn-del{
+  background:none;border:none;color:var(--text3);
+  cursor:pointer;width:26px;height:26px;border-radius:5px;
+  font-size:.85rem;display:flex;align-items:center;
+  justify-content:center;transition:background .12s,color .12s;
+}
+.btn-del:hover{background:var(--r-bg);color:var(--r-tx);}
+
+/* ── LEGEND ───────────────────────────────────── */
+.legend{
+  display:flex;gap:12px;padding:9px 16px;
+  border-top:1px solid var(--border);flex-wrap:wrap;
+  background:var(--surface);transition:var(--transition);
+}
+.legend-item{
+  display:flex;align-items:center;gap:5px;
+  font-size:.7rem;color:var(--text2);font-weight:500;
+}
+.legend-dot{width:9px;height:9px;border-radius:3px;}
+
+/* ── RESPONSIVE ───────────────────────────────── */
+@media(max-width:680px){
+  .header-inner{height:auto;padding:12px 14px;gap:8px;}
+  main{padding:14px 10px;}
+  .week-header{padding:10px 12px;}
+  #month-label{min-width:130px;font-size:.82rem;}
+  .logo p{display:none;}
+  #btn-dark span.label{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      <div>
+        <h1>Gestión de Turnos</h1>
+        <p>Residencia de Mayores</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="month-nav">
+      <button id="btn-prev" title="Mes anterior">&#8592;</button>
+      <span id="month-label">—</span>
+      <button id="btn-next" title="Mes siguiente">&#8594;</button>
+    </div>
+    <button id="btn-dark"><span id="dark-icon">🌙</span> <span class="label" id="dark-label">Modo oscuro</span></button>
+    <span id="sync-status" style="font-size:.72rem;font-weight:600;transition:color .3s;"></span>
+    <button class="btn-danger" id="btn-global-reset">🗑 Limpiar mes</button>
+  </div>
+</header>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main>
+  <div class="summary-card">
+    <div class="summary-card-header">
+      <span style="font-size:1.1rem">📊</span>
+      <h2>Resumen mensual</h2>
+      <span class="pill" id="summary-pill">0 empleados</span>
+    </div>
+    <div id="summary-wrap">
+      <table class="summary-tbl">
+        <thead>
+          <tr>
+            <th>Empleado/a</th>
+            <th>🌅 Mañana</th>
+            <th>☀️ Tarde</th>
+            <th>🌙 Noche</th>
+            <th>📥 Ingreso</th>
+            <th>📤 Renuncia</th>
+            <th>Turnos totales</th>
+            <th>⏱ Horas totales</th>
+          </tr>
+        </thead>
+        <tbody id="summary-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="weeks-container"></div>
+</main>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  NURSING HOME SHIFT MANAGER — v5                           ║
+   ║  New in v5: time-based hours (HH:MM inputs, overnight OK)  ║
+   ╚══════════════════════════════════════════════════════════════╝
+
+   TIME CALCULATION LOGIC
+   ──────────────────────
+   Each day cell stores:
+     { shift, timeStart, timeEnd, minutesWorked, hoursDecimal }
+
+   calcMinutes(start, end):
+     1. Parse "HH:MM" strings into total-minutes-since-midnight.
+     2. If endMins <= startMins  →  OVERNIGHT: add 1440 (24×60) to end.
+        Example: start=21:30 (1290 min), end=07:50 (470 min)
+                 470 < 1290  →  overnight  →  end = 470+1440 = 1910
+                 diff = 1910 - 1290 = 620 min = 10h 20m  ✓
+     3. Return the difference in minutes.
+
+   formatMinutes(total):
+     total = 620  →  "10h 20m"
+     total = 480  →  "8h"
+     total = 0    →  ""
+
+   hoursDecimal(total):
+     620 / 60 = 10.333…  (used for summing in the summary)
+
+   SUMMARY
+   ───────
+   Per employee, sum hoursDecimal across all in-month days
+   that are NOT "renuncia" and have both time fields filled.
+   Display as "Xh Ym" total.
+
+   SHIFT TYPES & TIME BEHAVIOUR
+   ─────────────────────────────
+   • morning / afternoon / night / ingreso → times optional
+   • renuncia  → times DISABLED, hours = 0
+   • unassigned ('') → times DISABLED
+*/
+
+// ─── CONSTANTS ───────────────────────────────────────────────
+
+const DAYS_SHORT  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const MONTH_NAMES = [
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+];
+
+const SHIFT_OPTS = [
+  { value:'',          label:'—',           cls:'',           noTime:true  },
+  { value:'morning',   label:'🌅 Mañana',   cls:'s-morning',  noTime:false },
+  { value:'afternoon', label:'☀️ Tarde',    cls:'s-afternoon',noTime:false },
+  { value:'night',     label:'🌙 Noche',    cls:'s-night',    noTime:false },
+  { value:'ingreso',   label:'📥 Ingreso',  cls:'s-ingreso',  noTime:false },
+  { value:'renuncia',  label:'📤 Renuncia', cls:'s-renuncia', noTime:true  },
+];
+const SHIFT_MAP = Object.fromEntries(SHIFT_OPTS.map(o => [o.value, o]));
+
+// ─── STATE ────────────────────────────────────────────────────
+
+const now = new Date();
+let curYear  = now.getFullYear();
+let curMonth = now.getMonth();
+let dragSrc  = null;
+
+// ─── DARK MODE ────────────────────────────────────────────────
+
+function applyDark(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('dark-icon').textContent  = dark ? '☀️' : '🌙';
+  document.getElementById('dark-label').textContent = dark ? 'Modo claro' : 'Modo oscuro';
+  localStorage.setItem('darkMode', dark ? '1' : '0');
+}
+applyDark(localStorage.getItem('darkMode') === '1');
+document.getElementById('btn-dark').addEventListener('click', () =>
+  applyDark(!document.documentElement.classList.contains('dark'))
+);
+
+// ─── CONFIGURACIÓN JSONBIN ────────────────────────────────────
+// ⚠️  INSTRUCCIONES:
+//   1. Abrí este archivo con el Bloc de Notas (o cualquier editor)
+//   2. Reemplazá el texto PEGA_TU_API_KEY_AQUI con tu X-Master-Key de JSONBin
+//   3. Reemplazá el texto PEGA_TU_BIN_ID_AQUI con tu BIN ID de JSONBin
+//   4. Guardá el archivo
+//   5. Subí el archivo a Netlify
+
+const JSONBIN_API_KEY = '$2a$10$gCTKi1a/o4ptA6gtDAGj1eXn9D3lDoTEtY3Gk8dVAi/E/ykE6lDz2';
+const JSONBIN_BIN_ID  = '69f14d7936566621a802d0a7';
+const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+// ─── INDICADOR DE SINCRONIZACIÓN ─────────────────────────────
+// Muestra un pequeño estado en el header (Guardando... / ✓ Guardado / Error)
+
+function setSyncStatus(state) {
+  let el = document.getElementById('sync-status');
+  if (!el) return;
+  const states = {
+    saving: { text: '⏳ Guardando...', color: 'var(--text2)' },
+    ok:     { text: '✓ Guardado',      color: 'var(--accent)' },
+    error:  { text: '⚠ Sin conexión',  color: 'var(--r-tx)'   },
+    local:  { text: '📴 Modo local',   color: 'var(--text3)'  },
+  };
+  const s = states[state] || states.local;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+// ─── STORAGE ─────────────────────────────────────────────────
+// Estrategia dual:
+//   1. Siempre guarda en localStorage (inmediato, sin red)
+//   2. Intenta sincronizar con JSONBin (nube, compartido)
+// Al cargar: intenta leer de JSONBin primero, si falla usa localStorage.
+
+function storeKey() { return `shifts_${curYear}_${curMonth}`; }
+
+/* ── Lectura local (instantánea) ── */
+function loadLocal() {
+  try {
+    const r = localStorage.getItem(storeKey());
+    return r ? JSON.parse(r) : null;
+  } catch { return null; }
+}
+
+/* ── Escritura local (instantánea) ── */
+function saveLocal(d) {
+  localStorage.setItem(storeKey(), JSON.stringify(d));
+}
+
+/* ── Lectura desde JSONBin (nube) ── */
+async function loadFromCloud() {
+  if (!JSONBIN_API_KEY || JSONBIN_API_KEY === 'PEGA_TU_API_KEY_AQUI') return null;
+  try {
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    // JSONBin guarda todos los meses en un objeto:
+    // { "shifts_2026_3": {...}, "shifts_2026_4": {...} }
+    const allData = json.record || {};
+    return allData[storeKey()] || null;
+  } catch { return null; }
+}
+
+/* ── Escritura en JSONBin (nube) ──
+   Lee primero el objeto completo del bin, actualiza solo el mes actual,
+   y vuelve a escribir el objeto entero. Así no se pierden otros meses.
+*/
+async function saveToCloud(d) {
+  if (!JSONBIN_API_KEY || JSONBIN_API_KEY === 'PEGA_TU_API_KEY_AQUI') {
+    setSyncStatus('local'); return;
+  }
+  setSyncStatus('saving');
+  try {
+    // 1. Leer datos actuales del bin completo
+    const getRes = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    let allData = {};
+    if (getRes.ok) {
+      const json = await getRes.json();
+      allData = json.record || {};
+    }
+
+    // 2. Actualizar solo el mes actual
+    allData[storeKey()] = d;
+
+    // 3. Escribir el objeto completo de vuelta
+    const putRes = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY,
+      },
+      body: JSON.stringify(allData),
+    });
+    if (!putRes.ok) throw new Error('PUT failed');
+    setSyncStatus('ok');
+    // Ocultar el "✓ Guardado" después de 2 segundos
+    setTimeout(() => setSyncStatus('idle'), 2000);
+  } catch {
+    setSyncStatus('error');
+  }
+}
+
+/* ── loadData: intenta nube, cae a local ── */
+async function loadData() {
+  const cloud = await loadFromCloud();
+  if (cloud) {
+    saveLocal(cloud); // sincroniza local con lo que hay en la nube
+    return cloud;
+  }
+  return loadLocal();
+}
+
+/* ── saveData: guarda local inmediato + nube async ── */
+function saveData(d) {
+  saveLocal(d);          // inmediato (sin esperar red)
+  saveToCloud(d);        // asíncrono en segundo plano
+}
+
+// ─── TIME MATH ───────────────────────────────────────────────
+
+/**
+ * Parse "HH:MM" string → total minutes since midnight.
+ * Returns null if the string is empty or invalid.
+ */
+function parseTime(str) {
+  if (!str || !str.includes(':')) return null;
+  const [h, m] = str.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+/**
+ * Calculate minutes worked between timeStart and timeEnd.
+ *
+ * OVERNIGHT LOGIC:
+ *   If endMins <= startMins, the shift crosses midnight.
+ *   We add 1440 (24 * 60) minutes to endMins so the arithmetic
+ *   yields a positive, correct duration.
+ *
+ *   Example:  start = "21:30" → 1290 min
+ *             end   = "07:50" →  470 min
+ *             470 <= 1290  → overnight!
+ *             adjustedEnd = 470 + 1440 = 1910 min
+ *             worked      = 1910 - 1290 = 620 min = 10h 20m ✓
+ *
+ * Returns 0 if either input is missing/invalid.
+ * Returns the number of minutes worked (may span up to ~23h 59m).
+ */
+function calcMinutes(timeStart, timeEnd) {
+  const startMins = parseTime(timeStart);
+  const endMins   = parseTime(timeEnd);
+  if (startMins === null || endMins === null) return 0;
+
+  let diff = endMins - startMins;
+
+  // Overnight: end is earlier than start (crossed midnight)
+  if (diff <= 0) diff += 1440; // add 24 hours in minutes
+
+  return diff;
+}
+
+/**
+ * Returns true if the shift is overnight (end < start).
+ * Used to apply a visual indicator on the duration badge.
+ */
+function isOvernight(timeStart, timeEnd) {
+  const s = parseTime(timeStart);
+  const e = parseTime(timeEnd);
+  if (s === null || e === null) return false;
+  return e < s; // strict less-than: end earlier than start → overnight
+}
+
+/**
+ * Format minutes as a human-readable string.
+ *   620  → "10h 20m"
+ *   480  → "8h"
+ *   30   → "30m"
+ *   0    → ""
+ */
+function formatMinutes(total) {
+  if (!total || total <= 0) return '';
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+/** Minutes → decimal hours (for summing). E.g. 620 → 10.333 */
+function minutesToDecimal(mins) { return mins / 60; }
+
+/** Decimal hours → display string. E.g. 10.333 → "10h 20m" */
+function decimalToDisplay(dec) {
+  return formatMinutes(Math.round(dec * 60));
+}
+
+// ─── CALENDAR ────────────────────────────────────────────────
+
+function buildCalendar(year, month) {
+  const first = new Date(year, month, 1);
+  const dowFirst = (first.getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - dowFirst);
+
+  const last = new Date(year, month + 1, 0);
+  const dowLast = (last.getDay() + 6) % 7;
+  const gridEnd = new Date(year, month, last.getDate() + (dowLast === 6 ? 0 : 6 - dowLast));
+
+  const weeks = [];
+  let wOff = 0;
+  while (true) {
+    const days = [];
+    let rSD=null,rSM=null,rED=null,rEM=null;
+    for (let d = 0; d < 7; d++) {
+      const c = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+wOff+d);
+      const inMonth = c.getFullYear()===year && c.getMonth()===month;
+      const iso = [c.getFullYear(), String(c.getMonth()+1).padStart(2,'0'), String(c.getDate()).padStart(2,'0')].join('-');
+      days.push({date:c.getDate(), month:c.getMonth(), year:c.getFullYear(), inMonth, iso});
+      if (rSD===null){rSD=c.getDate();rSM=c.getMonth();}
+      rED=c.getDate(); rEM=c.getMonth();
+    }
+    const fmt = (d,m) => m===month ? `${d}` : `${d} ${MONTH_NAMES[m].slice(0,3)}`;
+    weeks.push({ label:`${fmt(rSD,rSM)} – ${fmt(rED,rEM)} de ${MONTH_NAMES[month]} ${year}`, days });
+    wOff += 7;
+    const lc = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+wOff-1);
+    if (lc >= gridEnd) break;
+  }
+  return weeks;
+}
+
+// ─── DATA ────────────────────────────────────────────────────
+
+/**
+ * A blank employee record.
+ * days: { "YYYY-MM-DD": { shift, timeStart, timeEnd, minutesWorked } }
+ */
+function newEmployee(name='') { return { name, days:{} }; }
+
+function defaultMonthData(n) {
+  return { weeks: Array.from({length:n}, () => ({ employees:[newEmployee(),newEmployee()] })) };
+}
+
+/**
+ * Migrate old records that stored { shift, hours } to the new
+ * { shift, timeStart, timeEnd, minutesWorked } shape.
+ * Old "hours" → minutesWorked = hours * 60.
+ */
+function migrateEmployee(emp) {
+  // Very old format: emp.shifts (v1/v2)
+  if (emp.shifts && !emp.days) {
+    emp.days = {};
+    Object.entries(emp.shifts).forEach(([iso, shift]) => {
+      emp.days[iso] = { shift, timeStart:'', timeEnd:'', minutesWorked:0 };
+    });
+    delete emp.shifts;
+  }
+  if (!emp.days) emp.days = {};
+  // Old format: emp.days[iso].hours (v3/v4) → convert to minutesWorked
+  Object.values(emp.days).forEach(cell => {
+    if (cell.hours !== undefined && cell.minutesWorked === undefined) {
+      cell.minutesWorked = Math.round((cell.hours || 0) * 60);
+      if (!cell.timeStart) cell.timeStart = '';
+      if (!cell.timeEnd)   cell.timeEnd   = '';
+      delete cell.hours;
+    }
+    if (cell.minutesWorked === undefined) cell.minutesWorked = 0;
+    if (!cell.timeStart) cell.timeStart = '';
+    if (!cell.timeEnd)   cell.timeEnd   = '';
+  });
+  return emp;
+}
+
+function normalizeData(data, numWeeks) {
+  if (!data || !data.weeks) return defaultMonthData(numWeeks);
+  while (data.weeks.length < numWeeks)
+    data.weeks.push({ employees:[newEmployee(),newEmployee()] });
+  data.weeks.forEach(week => {
+    if (!week.employees || !week.employees.length)
+      week.employees = [newEmployee(), newEmployee()];
+    week.employees.forEach((emp,i) => { week.employees[i] = migrateEmployee(emp); });
+  });
+  return data;
+}
+
+// ─── TODAY ───────────────────────────────────────────────────
+
+const TODAY_ISO = [now.getFullYear(),
+  String(now.getMonth()+1).padStart(2,'0'),
+  String(now.getDate()).padStart(2,'0')].join('-');
+const isToday = iso => iso === TODAY_ISO;
+
+// ─── RENDER ──────────────────────────────────────────────────
+
+async function render() {
+  document.getElementById('month-label').textContent = `${MONTH_NAMES[curMonth]} ${curYear}`;
+  const calWeeks = buildCalendar(curYear, curMonth);
+  let data = normalizeData(await loadData(), calWeeks.length);
+  saveLocal(data); // guarda local inmediatamente sin esperar red
+  const container = document.getElementById('weeks-container');
+  container.innerHTML = '';
+  calWeeks.forEach((calWeek, wi) =>
+    container.appendChild(buildWeekSection(wi, calWeek, data.weeks[wi]))
+  );
+  renderSummary(data, calWeeks);
+}
+
+// ─── WEEK SECTION ────────────────────────────────────────────
+
+function buildWeekSection(weekIdx, calWeek, weekData) {
+  const section = document.createElement('div');
+  section.className = 'week-section';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'week-header';
+  hdr.innerHTML = `
+    <div class="week-title">
+      <h3>Semana ${weekIdx+1}</h3>
+      <span class="week-range">${calWeek.label}</span>
+    </div>
+    <div class="week-actions">
+      <button class="btn-add">＋ Agregar empleado/a</button>
+      <button class="btn-week-reset">↺ Limpiar semana</button>
+    </div>`;
+  section.appendChild(hdr);
+
+  hdr.querySelector('.btn-add').addEventListener('click', () => {
+    const d=loadData(); d.weeks[weekIdx].employees.push(newEmployee()); saveData(d); render();
+  });
+  hdr.querySelector('.btn-week-reset').addEventListener('click', () => {
+    if (!confirm(`¿Limpiar todos los turnos de la Semana ${weekIdx+1}?`)) return;
+    const d=loadData(); d.weeks[weekIdx].employees.forEach(e=>{e.days={};}); saveData(d); render();
+  });
+
+  const scrollDiv = document.createElement('div');
+  scrollDiv.className = 'table-scroll';
+  const tbl = document.createElement('table');
+  tbl.className = 'shift-tbl';
+
+  // THEAD
+  const thead = document.createElement('thead');
+  const hrow  = document.createElement('tr');
+  const thName = document.createElement('th');
+  thName.style.textAlign = 'left';
+  thName.innerHTML = `<span style="font-size:.8rem;font-weight:600">Empleado/a</span>`;
+  hrow.appendChild(thName);
+  calWeek.days.forEach((day, di) => {
+    const th = document.createElement('th');
+    if (!day.inMonth) th.classList.add('col-disabled');
+    if (isToday(day.iso)) th.classList.add('col-today');
+    th.innerHTML = `<span class="th-day-name">${DAYS_SHORT[di]}</span>
+                    <span class="th-day-num">${day.inMonth ? day.date : '·'}</span>`;
+    hrow.appendChild(th);
+  });
+  hrow.appendChild(document.createElement('th'));
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+
+  // TBODY
+  const tbody = document.createElement('tbody');
+  weekData.employees.forEach((emp, empIdx) =>
+    tbody.appendChild(buildEmployeeRow(weekIdx, empIdx, emp, calWeek, tbody))
+  );
+  tbl.appendChild(tbody);
+  scrollDiv.appendChild(tbl);
+  section.appendChild(scrollDiv);
+
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:var(--m-bd)"></div>Mañana</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--a-bd)"></div>Tarde</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--n-bd)"></div>Noche</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--i-bd)"></div>Ingreso</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--r-bd)"></div>Renuncia</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--border2)"></div>Sin asignar</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--today-bd)"></div>Hoy</div>
+    <div class="legend-item" style="margin-left:auto;color:var(--text3);font-size:.67rem">⠿ Arrastra para reordenar · 🌙 = turno nocturno</div>`;
+  section.appendChild(legend);
+  return section;
+}
+
+// ─── EMPLOYEE ROW ────────────────────────────────────────────
+
+function buildEmployeeRow(weekIdx, empIdx, emp, calWeek, tbody) {
+  const tr = document.createElement('tr');
+  tr.draggable = true;
+
+  /* ── Drag & Drop ────────────────────────────────────────── */
+  tr.addEventListener('dragstart', e => {
+    dragSrc = { weekIdx, empIdx };
+    tr.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+  });
+  tr.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!tr.classList.contains('dragging')) tr.classList.add('drag-over');
+  });
+  tr.addEventListener('dragleave', () => tr.classList.remove('drag-over'));
+  tr.addEventListener('drop', e => {
+    e.preventDefault();
+    tr.classList.remove('drag-over');
+    if (!dragSrc || dragSrc.weekIdx!==weekIdx || dragSrc.empIdx===empIdx) return;
+    const d = loadData();
+    const emps = d.weeks[weekIdx].employees;
+    const [moved] = emps.splice(dragSrc.empIdx, 1);
+    const targetIdx = dragSrc.empIdx < empIdx ? empIdx-1 : empIdx;
+    emps.splice(targetIdx, 0, moved);
+    saveData(d); render();
+  });
+  tr.addEventListener('dragend', () => {
+    tr.classList.remove('dragging');
+    document.querySelectorAll('tr.drag-over').forEach(r => r.classList.remove('drag-over'));
+    dragSrc = null;
+  });
+
+  /* ── Name cell ── */
+  const tdName = document.createElement('td');
+  tdName.innerHTML = `<span class="drag-handle" title="Arrastrar para reordenar">⠿</span>`;
+  const inp = document.createElement('input');
+  inp.type='text'; inp.className='name-inp';
+  inp.placeholder=`Empleado/a ${empIdx+1}`; inp.value=emp.name||'';
+  inp.addEventListener('change', e => {
+    const d=loadData();
+    d.weeks[weekIdx].employees[empIdx].name=e.target.value.trim();
+    saveData(d); renderSummary(d, buildCalendar(curYear,curMonth));
+  });
+  tdName.appendChild(inp);
+  tr.appendChild(tdName);
+
+  /* ── Day cells ── */
+  calWeek.days.forEach(day => {
+    const td = document.createElement('td');
+    if (!day.inMonth) { td.classList.add('col-disabled'); tr.appendChild(td); return; }
+    if (isToday(day.iso)) td.classList.add('col-today');
+
+    const saved      = (emp.days && emp.days[day.iso]) || {};
+    const savedShift = saved.shift     || '';
+    const savedStart = saved.timeStart || '';
+    const savedEnd   = saved.timeEnd   || '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'cell-wrap';
+
+    /* Shift dropdown */
+    const sel = document.createElement('select');
+    sel.className = 'shift-sel';
+    const savedOpt = SHIFT_MAP[savedShift] || SHIFT_MAP[''];
+    if (savedOpt.cls) sel.classList.add(savedOpt.cls);
+    SHIFT_OPTS.forEach(opt => {
+      const o = document.createElement('option');
+      o.value=opt.value; o.textContent=opt.label;
+      if (opt.value===savedShift) o.selected=true;
+      sel.appendChild(o);
+    });
+
+    /* Time row: start ─ end */
+    const timeRow = document.createElement('div');
+    timeRow.className = 'time-row';
+
+    const startInp = buildTimeInput(savedStart, savedOpt.noTime, 'Entrada');
+    const sep      = document.createElement('span');
+    sep.className  = 'time-sep'; sep.textContent = '–';
+    const endInp   = buildTimeInput(savedEnd, savedOpt.noTime, 'Salida');
+
+    timeRow.appendChild(startInp);
+    timeRow.appendChild(sep);
+    timeRow.appendChild(endInp);
+
+    /* Duration badge */
+    const badge = document.createElement('div');
+    badge.className = 'duration-badge';
+
+    // Helper: recalculate and update badge + save
+    const updateCell = () => {
+      const start = startInp.value;
+      const end   = endInp.value;
+      const mins  = calcMinutes(start, end);
+      const label = formatMinutes(mins);
+
+      badge.textContent = label;
+      badge.classList.toggle('overnight', label !== '' && isOvernight(start, end));
+
+      saveDay(weekIdx, empIdx, day.iso, sel.value, start, end, mins);
+    };
+
+    // Initialise badge from saved data
+    if (savedStart && savedEnd) {
+      const mins = calcMinutes(savedStart, savedEnd);
+      badge.textContent = formatMinutes(mins);
+      badge.classList.toggle('overnight', isOvernight(savedStart, savedEnd));
+    }
+
+    /* Shift change handler */
+    sel.addEventListener('change', e => {
+      const val = e.target.value;
+      const opt = SHIFT_MAP[val] || SHIFT_MAP[''];
+      sel.className = 'shift-sel';
+      if (opt.cls) sel.classList.add(opt.cls);
+      // Disable/enable time inputs
+      startInp.disabled = opt.noTime;
+      endInp.disabled   = opt.noTime;
+      if (opt.noTime) {
+        startInp.value = ''; endInp.value = '';
+        badge.textContent = '';
+        badge.classList.remove('overnight');
+        saveDay(weekIdx, empIdx, day.iso, val, '', '', 0);
+      } else {
+        updateCell();
+      }
+    });
+
+    startInp.addEventListener('change', updateCell);
+    endInp.addEventListener('change',   updateCell);
+
+    wrap.appendChild(sel);
+    wrap.appendChild(timeRow);
+    wrap.appendChild(badge);
+    td.appendChild(wrap);
+    tr.appendChild(td);
+  });
+
+  /* ── Delete row ── */
+  const tdDel = document.createElement('td');
+  const btnDel = document.createElement('button');
+  btnDel.className='btn-del'; btnDel.title='Eliminar fila'; btnDel.textContent='✕';
+  btnDel.addEventListener('click', () => {
+    const d=loadData(); const emps=d.weeks[weekIdx].employees;
+    if (emps.length<=1) emps[empIdx]=newEmployee(); else emps.splice(empIdx,1);
+    saveData(d); render();
+  });
+  tdDel.appendChild(btnDel);
+  tr.appendChild(tdDel);
+
+  return tr;
+}
+
+/**
+ * Create a styled time <input type="time"> element.
+ * Using type="time" gives mobile users a native picker (very tap-friendly).
+ * @param {string}  value    — initial value "HH:MM" or ""
+ * @param {boolean} disabled — true for renuncia / unassigned
+ * @param {string}  title    — tooltip text
+ */
+function buildTimeInput(value, disabled, title) {
+  const inp = document.createElement('input');
+  inp.type  = 'time';
+  inp.className = 'time-inp';
+  inp.value = value || '';
+  inp.disabled = disabled;
+  inp.title = title;
+  inp.setAttribute('aria-label', title);
+  return inp;
+}
+
+// ─── SAVE DAY ────────────────────────────────────────────────
+
+/**
+ * Persist one day-cell to localStorage.
+ * Stores shift, timeStart, timeEnd, minutesWorked.
+ * Also stores hoursDecimal for convenient summing.
+ *
+ * @param {number} weekIdx
+ * @param {number} empIdx
+ * @param {string} iso           "YYYY-MM-DD"
+ * @param {string} shift         e.g. "morning"
+ * @param {string} timeStart     "HH:MM" or ""
+ * @param {string} timeEnd       "HH:MM" or ""
+ * @param {number} minutesWorked calculated duration in minutes
+ */
+function saveDay(weekIdx, empIdx, iso, shift, timeStart, timeEnd, minutesWorked) {
+  const d = loadData();
+  if (!d.weeks[weekIdx].employees[empIdx].days)
+    d.weeks[weekIdx].employees[empIdx].days = {};
+
+  d.weeks[weekIdx].employees[empIdx].days[iso] = {
+    shift,
+    timeStart,
+    timeEnd,
+    minutesWorked,
+    // Store decimal too (convenient for external exports)
+    hoursDecimal: minutesToDecimal(minutesWorked),
+  };
+  saveData(d);
+  renderSummary(d, buildCalendar(curYear, curMonth));
+}
+
+// ─── SUMMARY ─────────────────────────────────────────────────
+
+/**
+ * Compute per-employee totals and render the summary table.
+ *
+ * HOURS TOTAL (per employee, per month):
+ * ──────────────────────────────────────
+ * Iterate every in-month day across all weeks.
+ * For each day cell:
+ *   • If shift === ''          → skip (unassigned)
+ *   • If shift === 'renuncia'  → count renuncia; skip hours
+ *   • Otherwise                → count shift; add minutesWorked to total
+ * Finally convert total minutes → "Xh Ym" for display.
+ *
+ * Why use minutesWorked (not hoursDecimal)?
+ * Summing integers avoids floating-point drift (620+480 = 1100, exact).
+ */
+function renderSummary(data, calWeeks) {
+  const tbody = document.getElementById('summary-body');
+  tbody.innerHTML = '';
+
+  // stats[name] = { morning, afternoon, night, ingreso, renuncia, totalMinutes }
+  const stats = {};
+
+  data.weeks.forEach((week, wi) => {
+    if (!calWeeks[wi]) return;
+    const cal = calWeeks[wi];
+    week.employees.forEach(emp => {
+      const name = (emp.name || '').trim();
+      if (!name) return;
+      if (!stats[name])
+        stats[name] = { morning:0, afternoon:0, night:0, ingreso:0, renuncia:0, totalMinutes:0 };
+
+      cal.days.forEach(day => {
+        if (!day.inMonth) return;
+        const cell  = (emp.days && emp.days[day.iso]) || {};
+        const shift = cell.shift || '';
+        if (!shift) return;
+
+        if (stats[name][shift] !== undefined) stats[name][shift]++;
+
+        // Add worked minutes (only non-renuncia shifts)
+        if (shift !== 'renuncia') {
+          stats[name].totalMinutes += (cell.minutesWorked || 0);
+        }
+      });
+    });
+  });
+
+  const entries = Object.entries(stats);
+  document.getElementById('summary-pill').textContent =
+    `${entries.length} empleado${entries.length!==1?'s':''}`;
+
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="8"
+      style="text-align:center;color:var(--text3);padding:18px;font-size:.82rem">
+      Escribe nombres en los campos de empleado/a para ver el resumen.</td></tr>`;
+    return;
+  }
+
+  entries.sort((a,b) => {
+    const ta=a[1].morning+a[1].afternoon+a[1].night+a[1].ingreso;
+    const tb=b[1].morning+b[1].afternoon+b[1].night+b[1].ingreso;
+    return tb-ta;
+  });
+
+  entries.forEach(([name, s]) => {
+    const total   = s.morning+s.afternoon+s.night+s.ingreso;
+    const hLabel  = formatMinutes(s.totalMinutes) || '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600">${escHtml(name)}</td>
+      <td><span class="chip chip-m">${s.morning}</span></td>
+      <td><span class="chip chip-a">${s.afternoon}</span></td>
+      <td><span class="chip chip-n">${s.night}</span></td>
+      <td><span class="chip chip-i">${s.ingreso}</span></td>
+      <td><span class="chip chip-r">${s.renuncia}</span></td>
+      <td><span class="chip ${total>0?'chip-t':'chip-0'}">${total}</span></td>
+      <td><span class="chip ${s.totalMinutes>0?'chip-h':'chip-0'}">${hLabel}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────
+
+function escHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+  curMonth--; if(curMonth<0){curMonth=11;curYear--;}
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  curMonth++; if(curMonth>11){curMonth=0;curYear++;}
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// ─── GLOBAL RESET ────────────────────────────────────────────
+
+document.getElementById('btn-global-reset').addEventListener('click', () => {
+  if (!confirm(`¿Eliminar TODOS los turnos de ${MONTH_NAMES[curMonth]} ${curYear}?\nEsta acción no se puede deshacer.`)) return;
+  localStorage.removeItem(storeKey());
+  // También limpia ese mes en la nube
+  saveToCloud(defaultMonthData(buildCalendar(curYear,curMonth).length));
+  render();
+});
+
+// ─── INIT ────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
